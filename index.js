@@ -19,14 +19,9 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(p => p.id === id)
-  
-  if (person) {
+  Person.findById(request.params.id).then(person => {
     response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -37,24 +32,20 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-  const person = request.body
-  const id = Math.floor(Math.random() * 1000) 
-  person.id = id 
+  const body = request.body
 
-  if (person.name.length === 0) {
-    response.status(404).end('error: name is missing')
+  if (body.name === undefined) {
+    return response.status(400).json({ error: 'name missing'})
   }
 
-  if (person.number.length === 0) {
-    response.status(404).end('error: number is missing')
-  }
+  const person = new Person({
+    name: body.name,
+    number: body.number || '',
+  })
 
-  if (persons.find(p => p.name === person.name)) {
-    response.status(409).end('error: name must be unique')
-  }
-
-  persons = persons.concat(person)
-  response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
 const PORT = process.env.PORT
